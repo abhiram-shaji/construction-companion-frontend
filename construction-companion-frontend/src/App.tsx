@@ -11,17 +11,31 @@ const App = () => {
             <nav>
                 <ul>
                     <li><NavLink to="/" className={({ isActive }) => isActive ? 'active' : ''}>Home</NavLink></li>
-                    <li><NavLink to="/estimates" className={({ isActive }) => isActive ? 'active' : ''}>Estimates</NavLink></li>
-                    <li><NavLink to="/budgets" className={({ isActive }) => isActive ? 'active' : ''}>Budgets</NavLink></li>
-                    <li><NavLink to="/tasks" className={({ isActive }) => isActive ? 'active' : ''}>Tasks</NavLink></li>
+                    <li><NavLink to="/Users" className={({ isActive }) => isActive ? 'active' : ''}>Users</NavLink></li>
                 </ul>
             </nav>
 
             <Routes>
-                <Route path="/" element={<h1>Welcome to Construction Companion</h1>} />
-                <Route path="/estimates" element={<Estimates />} />
-                <Route path="/budgets" element={<Budgets />} />
-                <Route path="/tasks" element={<Tasks />} />
+                <Route
+                    path="/"
+                    element={
+                        <div>
+                            <h1>Welcome to Construction Companion</h1>
+                            <section>
+                                <h2>Estimates</h2>
+                                <Estimates />
+                            </section>
+                            <section>
+                                <h2>Budgets</h2>
+                                <Budgets />
+                            </section>
+                            <section>
+                                <h2>Tasks</h2>
+                                <Tasks />
+                            </section>
+                        </div>
+                    }
+                />
             </Routes>
         </Router>
     );
