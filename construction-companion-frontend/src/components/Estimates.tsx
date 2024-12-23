@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { fetchEstimates, createEstimate, deleteEstimate } from "../services/estimateService";
 
 interface Estimate {
   id: number;
@@ -8,7 +8,7 @@ interface Estimate {
   deadline: string;
 }
 
-const Estimates = () => {
+const Estimates: React.FC = () => {
   const [estimates, setEstimates] = useState<Estimate[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,70 +18,42 @@ const Estimates = () => {
     deadline: "",
   });
 
-  const fetchEstimates = async () => {
+  const loadEstimates = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_BACKEND_URL}/api/estimates`
-      );
-      const data: [string, number, string][] = response.data; // Define the expected type of the response
-
-      // Transform the array of arrays into an array of objects
-      const formattedData = data.map(
-        (item: [string, number, string], index: number) => ({
-          id: index + 1,
-          projectName: item[0],
-          estimatedCost: item[1],
-          deadline: new Date(item[2]).toISOString().split("T")[0], // Format the date as YYYY-MM-DD
-        })
-      );
-
-      setEstimates(formattedData);
+      setLoading(true);
+      const data = await fetchEstimates();
+      setEstimates(data);
       setError(null);
-    } catch (err) {
-      setError("Failed to fetch estimates. Please try again.");
-      console.error("Error fetching estimates:", err);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const createEstimate = async () => {
-    const { projectName, estimatedCost, deadline } = newEstimate;
-    if (!projectName || !estimatedCost || !deadline) {
-      alert("Please fill in all fields");
-      return;
-    }
-
+  const handleCreateEstimate = async () => {
     try {
-      await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/estimates`, {
-        projectName,
-        estimatedCost: parseFloat(estimatedCost),
-        deadline,
-      });
+      await createEstimate(newEstimate);
       alert("Estimate created successfully");
       setNewEstimate({ projectName: "", estimatedCost: "", deadline: "" });
-      fetchEstimates();
-    } catch (err) {
-      alert("Failed to create estimate");
-      console.error("Error creating estimate:", err);
+      loadEstimates();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
-  const deleteEstimate = async (id: number) => {
+  const handleDeleteEstimate = async (id: number) => {
     try {
-      await axios.delete(
-        `${process.env.REACT_APP_BACKEND_URL}/api/estimates/${id}`
-      );
+      await deleteEstimate(id);
       alert("Estimate deleted successfully");
-      fetchEstimates(); // Refresh estimates after deletion
-    } catch (err) {
-      alert("Failed to delete estimate");
-      console.error("Error deleting estimate:", err);
+      loadEstimates();
+    } catch (err: any) {
+      alert(err.message);
     }
   };
 
   useEffect(() => {
-    fetchEstimates();
+    loadEstimates();
   }, []);
 
   return (
@@ -101,7 +73,7 @@ const Estimates = () => {
                   <strong>{estimate.projectName}</strong> - $
                   {estimate.estimatedCost?.toLocaleString() || "0"} - Due:{" "}
                   {estimate.deadline}
-                  <button onClick={() => deleteEstimate(estimate.id)}>
+                  <button onClick={() => handleDeleteEstimate(estimate.id)}>
                     Delete
                   </button>
                 </li>
@@ -139,7 +111,7 @@ const Estimates = () => {
                 setNewEstimate({ ...newEstimate, deadline: e.target.value })
               }
             />
-            <button onClick={createEstimate}>Create</button>
+            <button onClick={handleCreateEstimate}>Create</button>
           </div>
         </>
       )}
