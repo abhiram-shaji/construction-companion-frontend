@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { fetchBudgets, createBudget, updateBudget } from '../services/budgetService';
 
 interface Budget {
     id: number;
@@ -8,7 +8,7 @@ interface Budget {
     currentSpend: number;
 }
 
-const Budgets = () => {
+const Budgets: React.FC = () => {
     const [budgets, setBudgets] = useState<Budget[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -18,64 +18,42 @@ const Budgets = () => {
         currentSpend: '',
     });
 
-    const fetchBudgets = async () => {
+    const loadBudgets = async () => {
         try {
-            const response = await axios.get(`${process.env.REACT_APP_BACKEND_URL}/api/budgets`);
-            const data = response.data;
-
-            // Transform the array of arrays into an array of objects
-            const formattedData = data.map((item: any) => ({
-                id: item[0],
-                projectId: item[1],
-                budgetLimit: item[2],
-                currentSpend: item[3],
-            }));
-
-            setBudgets(formattedData);
+            setLoading(true);
+            const data = await fetchBudgets();
+            setBudgets(data);
             setError(null);
-        } catch (err) {
-            setError('Failed to fetch budgets. Please try again.');
-            console.error('Error fetching budgets:', err);
+        } catch (err: any) {
+            setError(err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    const createBudget = async () => {
-        const { projectId, budgetLimit, currentSpend } = newBudget;
-        if (!projectId || !budgetLimit || !currentSpend) {
-            alert('Please fill in all fields');
-            return;
-        }
-
+    const handleCreateBudget = async () => {
         try {
-            await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/budgets`, {
-                projectId: parseInt(projectId, 10),
-                budgetLimit: parseFloat(budgetLimit),
-                currentSpend: parseFloat(currentSpend),
-            });
+            await createBudget(newBudget);
             alert('Budget created successfully');
             setNewBudget({ projectId: '', budgetLimit: '', currentSpend: '' });
-            fetchBudgets();
-        } catch (err) {
-            alert('Failed to create budget');
-            console.error('Error creating budget:', err);
+            loadBudgets();
+        } catch (err: any) {
+            alert(err.message);
         }
     };
 
-    const updateBudget = async (id: number, updatedBudget: { budgetLimit: number; currentSpend: number }) => {
+    const handleUpdateBudget = async (id: number, updatedData: { budgetLimit: number; currentSpend: number }) => {
         try {
-            await axios.put(`${process.env.REACT_APP_BACKEND_URL}/api/budgets/${id}`, updatedBudget);
+            await updateBudget(id, updatedData);
             alert('Budget updated successfully');
-            fetchBudgets();
-        } catch (err) {
-            alert('Failed to update budget');
-            console.error('Error updating budget:', err);
+            loadBudgets();
+        } catch (err: any) {
+            alert(err.message);
         }
     };
 
     useEffect(() => {
-        fetchBudgets();
+        loadBudgets();
     }, []);
 
     return (
@@ -95,8 +73,8 @@ const Budgets = () => {
                                     <strong>Project ID:</strong> {budget.projectId} - <strong>Budget Limit:</strong> ${budget.budgetLimit.toFixed(2)} - <strong>Current Spend:</strong> ${budget.currentSpend.toFixed(2)}
                                     <button
                                         onClick={() =>
-                                            updateBudget(budget.id, {
-                                                budgetLimit: budget.budgetLimit + 100, // Example increment
+                                            handleUpdateBudget(budget.id, {
+                                                budgetLimit: budget.budgetLimit + 100,
                                                 currentSpend: budget.currentSpend,
                                             })
                                         }
@@ -130,7 +108,7 @@ const Budgets = () => {
                             value={newBudget.currentSpend}
                             onChange={(e) => setNewBudget({ ...newBudget, currentSpend: e.target.value })}
                         />
-                        <button onClick={createBudget}>Create</button>
+                        <button onClick={handleCreateBudget}>Create</button>
                     </div>
                 </>
             )}
